@@ -1,0 +1,7 @@
+!/bin/sh
+docker-machine create \
+    --driver=generic \
+    --generic-ssh-user=root \
+    --generic-ip-address=<ip addr> \
+    --generic-ssh-key=<private key> \
+    a_name (edited) 

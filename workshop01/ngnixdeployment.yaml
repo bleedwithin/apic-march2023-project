@@ -1,0 +1,5 @@
+/usr/bin/apt update -y
+/usr/bin/apt upgrade -y
+/usr/bin/apt install nginx -y
+/usr/bin/systemctl start nginx
+/usr/bin/systemctl enable nginx

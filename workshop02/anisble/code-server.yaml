@@ -1,0 +1,53 @@
+- name: Set up codeserver
+  hosts: codeserver
+  vars_files:
+    - ../vars/codeserver.yml
+  vars:
+    cs_dir: /usr/local/opt
+    code_server_version: 4.9.1
+    unpacked_file: "code-server-{{ code_server_version }}-linux-amd64"
+  tasks:
+    - name: Updates and upgrades apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+    - name: Creates opt and var/lib directory
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ cs_dir }}"
+        - /var/lib/code-server
+    - name: Find if code server file exists
+      stat:
+        path: "{{ cs_dir }}/{{ unpacked_file }}"
+      register: code_server_file
+    - name: Downloads and archive code server tar file if doesn't exist
+      unarchive:
+        remote_src: yes
+        src: https://github.com/cdr/code-server/releases/download/v{{ code_server_version }}/code-server-{{ code_server_version }}-linux-amd64.tar.gz
+        dest: "{{ cs_dir }}"
+      when: not code_server_file.stat.exists
+    - name: Creates symbolic link
+      file:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        state: link
+      loop:
+        - src: "{{ cs_dir }}/{{ unpacked_file }}"
+          dest: /usr/lib/code-server
+        - src: "{{ cs_dir }}/{{ unpacked_file }}/bin/code-server"
+          dest: /usr/bin/code-server
+    - name: Generate code server config file
+      template:
+        src: "../templates/sample.code-server.service.j2"
+        dest: /lib/systemd/system/code-server.service
+      vars:
+        codeserver_password: "{{ codeserver_secret_password }}"
+    - name: Enable codeserver service
+      systemd:
+        name: code-server
+        daemon_reload: true
+        enabled: yes
+        state: started
+        
